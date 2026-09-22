@@ -29,12 +29,52 @@ jobs:
           mkdir proyecto
           unzip -q "$ZIP" -d proyecto
 
-          echo "Contenido descomprimido:"
-          find proyecto -maxdepth 3 -type f | head -50
-
           cp -a proyecto/MiniYoTamagotchiAndroid/. .
           rm -rf proyecto
 
+      - name: Configurar Java 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Configurar Android SDK
+        run: |
+          if [ -z "$ANDROID_HOME" ]; then
+            export ANDROID_HOME="/usr/local/lib/android/sdk"
+          fi
+
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+
+          SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager 2>/dev/null | sort -V | tail -n 1)
+
+          if [ -z "$SDKMANAGER" ]; then
+            echo "ERROR: No se encontró sdkmanager."
+            exit 1
+          fi
+
+          echo "SDKMANAGER=$SDKMANAGER"
+          echo "Aceptando licencias..."
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+
+          echo "Instalando Android 35..."
+          "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Configurar Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '8.10'
+
+      - name: Compilar APK
+        run: |
+          gradle :app:assembleDebug --no-daemon
+
+      - name: Guardar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MiniYoTamagotchi-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
       - name: Configurar Java 17
         uses: actions/setup-java@v6
         with:
