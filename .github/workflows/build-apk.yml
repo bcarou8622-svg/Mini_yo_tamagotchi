@@ -32,6 +32,10 @@ jobs:
           cp -a proyecto/MiniYoTamagotchiAndroid/. .
           rm -rf proyecto
 
+      - name: Corregir error de Java
+        run: |
+          sed -i 's/t.length < 2/t.length() < 2/' app/src/main/java/com/miniyo/tamagotchi/MainActivity.java
+
       - name: Configurar Java 17
         uses: actions/setup-java@v6
         with:
@@ -55,39 +59,8 @@ jobs:
           fi
 
           echo "SDKMANAGER=$SDKMANAGER"
-          echo "Aceptando licencias..."
           yes | "$SDKMANAGER" --licenses >/dev/null || true
-
-          echo "Instalando Android 35..."
           "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
-
-      - name: Configurar Gradle
-        uses: gradle/actions/setup-gradle@v6
-        with:
-          gradle-version: '8.10'
-
-      - name: Compilar APK
-        run: |
-          gradle :app:assembleDebug --no-daemon
-
-      - name: Guardar APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: MiniYoTamagotchi-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
-      - name: Configurar Java 17
-        uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Configurar Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Instalar Android SDK
-        run: |
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
       - name: Configurar Gradle
         uses: gradle/actions/setup-gradle@v6
